@@ -55,16 +55,19 @@
       background: #45a049;
     }
 
-    .error {
-      color: red;
+    .signup-link {
+      margin-top: 15px;
       font-size: 14px;
-      margin-top: 10px;
     }
 
-    .success {
-      color: green;
-      font-size: 14px;
-      margin-top: 10px;
+    .signup-link a {
+      color: #007BFF;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .signup-link a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -76,6 +79,9 @@
       <input type="password" name="password" placeholder="Password" required>
       <input type="submit" value="Login">
     </form>
+    <div class="signup-link">
+      Don't have an account? <a href="signup.html">Sign up</a>
+    </div>
   </div>
 </body>
 </html>
