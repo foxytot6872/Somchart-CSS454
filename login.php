@@ -55,19 +55,21 @@
       background: #45a049;
     }
 
-    .signup-link {
+    .signup-button {
       margin-top: 15px;
-      font-size: 14px;
-    }
-
-    .signup-link a {
-      color: #007BFF;
+      display: inline-block;
+      background-color: #007BFF;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
       text-decoration: none;
-      font-weight: bold;
+      font-size: 14px;
+      transition: background 0.3s ease;
     }
 
-    .signup-link a:hover {
-      text-decoration: underline;
+    .signup-button:hover {
+      background-color: #0056b3;
     }
   </style>
 </head>
@@ -79,9 +81,9 @@
       <input type="password" name="password" placeholder="Password" required>
       <input type="submit" value="Login">
     </form>
-    <div class="signup-link">
-      Don't have an account? <a href="signup.html">Sign up</a>
-    </div>
+
+    <!-- Button-style link to signup.html -->
+    <a class="signup-button" href="signup.php">Sign Up</a>
   </div>
 </body>
 </html>
