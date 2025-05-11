@@ -1,34 +1,38 @@
 <?php
 session_start();
+
 $host = 'localhost';
 $db   = 'cloudstorageservice';
 $user = 'root';
-$pass = 'root';
+$pass = '';
 
-try {
-  $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
-  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-  die("DB connection failed: " . $e->getMessage());
+$mysqli = new mysqli($host, $user, $pass, $db);
+if ($mysqli->connect_error) {
+    die("Connection failed: " . $mysqli->connect_error);
 }
 
 $error = "";
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-  $username = $_POST['username'];
-  $password = $_POST['password'];
 
-  $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
-  $stmt->execute([$username]);
-  $user = $stmt->fetch(PDO::FETCH_ASSOC);
+// LOGIN LOGIC
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Login_Submit'])) {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
 
-  if ($user && password_verify($password, $user['password'])) {
-    $_SESSION['user_id'] = $user['id'];
-    $_SESSION['username'] = $user['username'];
-    header("Location: upload.php");
-    exit;
-  } else {
-    $error = "Invalid username or password.";
-  }
+    $stmt = $mysqli->prepare("SELECT * FROM user WHERE USERNAME = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
+
+    if ($user && password_verify($password, $user['USER_PASSWORD'])) {
+        $_SESSION["user_id"] = $user["USER_ID"];
+        $_SESSION["username"] = $user["USERNAME"];
+        header("Location: upload.php");
+        exit;
+    } else {
+        $error = "Invalid username or password.";
+    }
+    $stmt->close();
 }
 ?>
 
@@ -36,7 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Login</title>
+  <title>Login Page</title>
   <style>
     body {
       margin: 0;
@@ -57,21 +61,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       text-align: center;
     }
     .login-box h2 {
+      margin-bottom: 30px;
       color: #333;
-      margin-bottom: 20px;
     }
-    .login-box input {
+    .login-box input[type="text"],
+    .login-box input[type="password"] {
       width: 90%;
       padding: 12px;
       margin: 10px 0;
       border: 1px solid #ccc;
       border-radius: 8px;
+      box-sizing: border-box;
     }
     .login-box input[type="submit"] {
       background: #4CAF50;
       color: white;
-      font-size: 16px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
       cursor: pointer;
+      width: 100%;
+      transition: background 0.3s ease;
+      font-size: 16px;
     }
     .login-box input[type="submit"]:hover {
       background: #45a049;
@@ -94,10 +105,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <form action="" method="POST">
       <input type="text" name="username" placeholder="Username" required>
       <input type="password" name="password" placeholder="Password" required>
-      <input type="submit" value="Login">
+      <input type="submit" name="Login_Submit" value="Login">
     </form>
-    <?php if (!empty($error)) echo "<div class='error'>$error</div>"; ?>
-    <div class="signup-link">Don’t have an account? <a href="signup.php">Sign up</a></div>
+    <?php if ($error) echo "<div class='error'>$error</div>"; ?>
+    <div class="signup-link">
+      Don’t have an account? <a href="signup.php">Sign up</a>
+    </div>
   </div>
 </body>
 </html>
