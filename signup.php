@@ -51,8 +51,17 @@
       font-size: 16px;
     }
 
-    .signup-box input[type="submit"]:hover {
-      background-color: #45a049;
+    .signup{
+      margin-top: 15px;
+      display: inline-block;
+      background-color: #007BFF;
+      color: white;
+      padding: 10px 20px;
+      border: center;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 14px;
+      transition: background 0.3s ease;
     }
 
     .message {
@@ -84,7 +93,7 @@
         <option value="Other">Other</option>
       </select>
       <input type="date" name="dob" required>
-      <input type="submit" value="Sign Up">
+      <a class ="signup" href="login.php">Sign Up</a>
     </form>
   </div>
 </body>

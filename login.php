@@ -51,8 +51,17 @@
       font-size: 16px;
     }
 
-    .login-box input[type="submit"]:hover {
+    .loginbutton{
       background: #45a049;
+      margin-top: 15px;
+      display: inline-block;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 20px;
+      transition: background 0.3s ease;
     }
 
     .signup-button {
@@ -79,7 +88,7 @@
     <form action="login.php" method="POST">
       <input type="text" name="username" placeholder="Username" required>
       <input type="password" name="password" placeholder="Password" required>
-      <input type="submit" value="Login">
+      <a class="loginbutton" href="upload.php">Login</a>
     </form>
 
     <!-- Button-style link to signup.html -->
