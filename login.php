@@ -4,7 +4,7 @@ session_start();
 $host = 'localhost';
 $db   = 'cloudstorageservice';
 $user = 'root';
-$pass = '';
+$pass = 'root';
 
 $mysqli = new mysqli($host, $user, $pass, $db);
 if ($mysqli->connect_error) {

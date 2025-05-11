@@ -3,7 +3,7 @@
 $host = 'localhost';
 $db   = 'cloudstorageservice';
 $user = 'root';
-$pass = ''; // Change if needed
+$pass = 'root'; 
 
 $mysqli = new mysqli($host, $user, $pass, $db);
 if ($mysqli->connect_error) {
