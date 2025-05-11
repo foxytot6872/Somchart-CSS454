@@ -23,7 +23,6 @@ if(isset($_POST['Signup_Submit'])) {
         echo "Error: " . $stmt->error;
     }
     $stmt->close();
-
 }
 ?>
 
@@ -118,7 +117,7 @@ if(isset($_POST['Signup_Submit'])) {
     <form action="upload.php" method="POST">
       <input type="text" name="username" placeholder="Username" required>
       <input type="password" name="password" placeholder="Password" required>
-      <a class="loginbutton" name="Login_Submit" href="upload.php">Login</a>
+      <a class="loginbutton" name="Login_Submit">Login</a>
     </form>
 
     <!-- Button-style link to signup.html -->

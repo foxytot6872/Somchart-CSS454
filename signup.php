@@ -93,7 +93,7 @@
         <option value="Other">Other</option>
       </select>
       <input type="date" name="dob" required>
-      <a class ="signup" name="Signup_Submit" href="login.php">Sign Up</a>
+      <input type="submit" name="Signup_Submit"  class="signup " value="Sign up">
     </form>
   </div>
 </body>
