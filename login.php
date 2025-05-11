@@ -9,13 +9,14 @@ if(isset($_POST['Signup_Submit'])) {
     $dob = $_POST['dob'];
     $username = $_POST['su_username'];
     $password = $_POST['su_password'];
+    $AESkey = bin2hex(random_bytes(16));
 
     // Hash the password
     $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
     // Use prepared statements to insert user data
-    $stmt = $mysqli->prepare("INSERT INTO users (USER_FIRSTNAME, USER_SURNAME, USER_GENDER, USER_DOB, USERNAME, USER_PASSWORD) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("ssssss", $firstname, $lastname, $gender, $dob, $username, $hashed_password);
+    $stmt = $mysqli->prepare("INSERT INTO users (USER_FIRSTNAME, USER_SURNAME, USER_GENDER, USER_DOB, USERNAME, USER_PASSWORD, USER_KEY) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssssss", $firstname, $lastname, $gender, $dob, $username, $hashed_password, $AESkey);
     
     if ($stmt->execute()) {
         echo "";
@@ -23,6 +24,29 @@ if(isset($_POST['Signup_Submit'])) {
         echo "Error: " . $stmt->error;
     }
     $stmt->close();
+
+    $stmt2 = $mysqli->prepare("SELECT USER_ID, USER_PASSWORD FROM users WHERE USERNAME = ?");
+    $stmt2->bind_param("s", $username);
+    $stmt2->execute();
+    $result = $stmt2->get_result();
+    if ($result->num_rows > 0) {
+        // Fetch user details
+        $row = $result->fetch_assoc();
+        $id = $row['USER_ID'];
+    } else {
+        echo "Invalid";
+    }
+    $stmt2->close();
+
+    $tablename = "USERDB_" . $id;
+
+    $stmt3 = $mysqli->prepare("CREATE TABLE $tablename LIKE BASE_TABLE;");
+    if ($stmt3->execute()) {
+        echo "";
+    } else {
+        echo "Error: " . $stmt3->error;
+    }
+    $stmt3->close();
 }
 ?>
 

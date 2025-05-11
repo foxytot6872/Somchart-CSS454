@@ -13,7 +13,7 @@ if (isset($_POST['Login_Submit'])) {
     }
 
     // Use prepared statements to fetch the hashed password
-    $stmt = $mysqli->prepare("SELECT USER_ID, USER_PASSWORD FROM USER WHERE USERNAME = ?");
+    $stmt = $mysqli->prepare("SELECT USER_ID, USER_PASSWORD FROM users WHERE USERNAME = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -26,7 +26,7 @@ if (isset($_POST['Login_Submit'])) {
 
         // Verify the password
         if (password_verify($passwd, $hashed_password)) {
-            echo "Login successful. User ID: $id";
+            echo "";
         } else {
             echo "Invalid username or password.";
         }
