@@ -1,6 +1,43 @@
-<?php
-// File: upload.php
+<?php require_once('Connect.php');
 
+//transition from login.php
+if (isset($_POST['Login_Submit'])) {
+    // Insert data from Login.php
+    $username = $_POST['username'];
+    $passwd = $_POST['password'];
+
+    // Validate inputs
+    if (empty($username) || empty($passwd)) {
+        echo "Username and password cannot be empty.";
+        exit;
+    }
+
+    // Use prepared statements to fetch the hashed password
+    $stmt = $mysqli->prepare("SELECT USER_ID, USER_PASSWORD FROM USER WHERE USERNAME = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        // Fetch user details
+        $row = $result->fetch_assoc();
+        $hashed_password = $row['USER_PASSWORD'];
+        $id = $row['USER_ID'];
+
+        // Verify the password
+        if (password_verify($passwd, $hashed_password)) {
+            echo "Login successful. User ID: $id";
+        } else {
+            echo "Invalid username or password.";
+        }
+    } else {
+        echo "Invalid username or password.";
+    }
+
+    $stmt->close();
+}
+
+/*
 $message = "";
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['uploaded_files'])) {
     $host = 'localhost';
@@ -37,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['uploaded_files'])) {
         $message = "<div class='message error'>Database error: " . $e->getMessage() . "</div>";
     }
 }
+    */
 ?>
 
 <!-- Upload HTML UI -->

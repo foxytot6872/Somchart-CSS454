@@ -1,3 +1,33 @@
+<?php require_once('Connect.php');
+
+// transition from signup.php
+if(isset($_POST['Signup_Submit'])) {
+    // Insert data from Signup.php
+    $firstname = $_POST['name'];
+    $lastname = $_POST['surname'];
+    $gender = $_POST['gender'];
+    $dob = $_POST['dob'];
+    $username = $_POST['su_username'];
+    $password = $_POST['su_password'];
+
+    // Hash the password
+    $hashed_password = password_hash($password, PASSWORD_BCRYPT);
+
+    // Use prepared statements to insert user data
+    $stmt = $mysqli->prepare("INSERT INTO USER (USER_FIRSTNAME, USER_SURNAME, USER_GENDER, USER_DOB, USERNAME, USER_PASSWORD) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssdss", $firstname, $lastname, $gender, $dob, $username, $hashed_password);
+    
+    if ($stmt->execute()) {
+        echo "Sign up successful.";
+    } else {
+        echo "Error: " . $stmt->error;
+    }
+    $stmt->close();
+
+}
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -85,10 +115,10 @@
 <body>
   <div class="login-box">
     <h2>Login</h2>
-    <form action="login.php" method="POST">
+    <form action="upload.php" method="POST">
       <input type="text" name="username" placeholder="Username" required>
       <input type="password" name="password" placeholder="Password" required>
-      <a class="loginbutton" href="upload.php">Login</a>
+      <a class="loginbutton" name="Login_Submit" href="upload.php">Login</a>
     </form>
 
     <!-- Button-style link to signup.html -->

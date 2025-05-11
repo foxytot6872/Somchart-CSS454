@@ -81,11 +81,11 @@
 <body>
   <div class="signup-box">
     <h2>Create Account</h2>
-    <form action="signup.php" method="POST">
+    <form action="login.php" method="POST">
       <input type="text" name="name" placeholder="Name" required>
       <input type="text" name="surname" placeholder="Surname" required>
-      <input type="text" name="username" placeholder="Username" required>
-      <input type="password" name="password" placeholder="Password" required>
+      <input type="text" name="su_username" placeholder="Username" required>
+      <input type="password" name="su_password" placeholder="Password" required>
       <select name="gender" required>
         <option value="" disabled selected>Select Gender</option>
         <option value="Male">Male</option>
@@ -93,7 +93,7 @@
         <option value="Other">Other</option>
       </select>
       <input type="date" name="dob" required>
-      <a class ="signup" href="login.php">Sign Up</a>
+      <a class ="signup" name="Signup_Submit" href="login.php">Sign Up</a>
     </form>
   </div>
 </body>
