@@ -1,38 +1,39 @@
 <?php
-// CONNECT TO DB
 $host = 'localhost';
 $db   = 'cloudstorageservice';
 $user = 'root';
-$pass = ''; // Change if needed
+$pass = 'root';
 
-$mysqli = new mysqli($host, $user, $pass, $db);
-if ($mysqli->connect_error) {
-    die("Connection failed: " . $mysqli->connect_error);
+try {
+  $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
+  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+  die("DB error: " . $e->getMessage());
 }
 
-$success = "";
-$error = "";
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+  $name = trim($_POST['name']);
+  $surname = trim($_POST['surname']);
+  $username = trim($_POST['username']);
+  $password = $_POST['password'];
+  $gender = $_POST['gender'];
+  $dob = $_POST['dob'];
+  $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-// SIGNUP LOGIC
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Signup_Submit'])) {
-    $firstname = $_POST['name'];
-    $lastname = $_POST['surname'];
-    $gender = $_POST['gender'];
-    $dob = $_POST['dob'];
-    $username = $_POST['su_username'];
-    $password = $_POST['su_password'];
-
-    $hashed_password = password_hash($password, PASSWORD_BCRYPT);
-
-    $stmt = $mysqli->prepare("INSERT INTO user (USER_FIRSTNAME, USER_SURNAME, USER_GENDER, USER_DOB, USERNAME, USER_PASSWORD) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssdss", $firstname, $lastname, $gender, $dob, $username, $hashed_password);
-
-    if ($stmt->execute()) {
-        $success = "Sign up successful. You can now <a href='login.php'>Login</a>";
+  $check = $pdo->prepare("SELECT id FROM users WHERE username = ?");
+  $check->execute([$username]);
+  if ($check->rowCount() > 0) {
+    $error = "Username already exists.";
+  } else {
+    $stmt = $pdo->prepare("INSERT INTO users (name, surname, username, password, gender, dob)
+                          VALUES (?, ?, ?, ?, ?, ?)");
+    if ($stmt->execute([$name, $surname, $username, $hashedPassword, $gender, $dob])) {
+      header("Location: login.php");
+      exit;
     } else {
-        $error = "Error: " . $stmt->error;
+      $error = "Signup failed.";
     }
-    $stmt->close();
+  }
 }
 ?>
 
@@ -82,8 +83,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Signup_Submit'])) {
     .signup-box input[type="submit"]:hover {
       background-color: #0056b3;
     }
-    .message { margin-top: 15px; }
-    .success { color: green; }
+    .message { margin-top: 10px; }
     .error { color: red; }
   </style>
 </head>
@@ -93,8 +93,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Signup_Submit'])) {
     <form action="" method="POST">
       <input type="text" name="name" placeholder="Name" required>
       <input type="text" name="surname" placeholder="Surname" required>
-      <input type="text" name="su_username" placeholder="Username" required>
-      <input type="password" name="su_password" placeholder="Password" required>
+      <input type="text" name="username" placeholder="Username" required>
+      <input type="password" name="password" placeholder="Password" required>
       <select name="gender" required>
         <option value="" disabled selected>Select Gender</option>
         <option value="Male">Male</option>
@@ -102,15 +102,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Signup_Submit'])) {
         <option value="Other">Other</option>
       </select>
       <input type="date" name="dob" required>
-      <input type="submit" name="Signup_Submit" value="Sign Up">
+      <input type="submit" value="Sign Up">
+      <div class="message">Already have an account? <a href="login.php">Login here</a></div>
     </form>
-    <div class="message">
-      Already have an account? <a href="login.php">Login</a>
-    </div>
-    <?php
-      if ($success) echo "<div class='success'>$success</div>";
-      if ($error) echo "<div class='error'>$error</div>";
-    ?>
+    <?php if (!empty($error)) echo "<div class='error'>$error</div>"; ?>
   </div>
 </body>
 </html>
