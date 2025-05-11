@@ -114,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['uploaded_files'])) {
       font-size: 14px;
     }
 
-    .upload-box input[type="submit"] {
+    .uploadbox{
       background-color: #28a745;
       color: white;
       padding: 10px 25px;
@@ -148,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['uploaded_files'])) {
     <h2>Upload Files</h2>
     <form action="" method="POST" enctype="multipart/form-data">
       <input type="file" name="uploaded_files[]" multiple required>
-      <input type="submit" value="Upload">
+      <a class="uploadbox" href="filelist.php">UPLOAD</a>
     </form>
   </div>
 </body>
