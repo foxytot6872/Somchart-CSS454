@@ -14,11 +14,11 @@ if(isset($_POST['Signup_Submit'])) {
     $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
     // Use prepared statements to insert user data
-    $stmt = $mysqli->prepare("INSERT INTO USER (USER_FIRSTNAME, USER_SURNAME, USER_GENDER, USER_DOB, USERNAME, USER_PASSWORD) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssdss", $firstname, $lastname, $gender, $dob, $username, $hashed_password);
+    $stmt = $mysqli->prepare("INSERT INTO users (USER_FIRSTNAME, USER_SURNAME, USER_GENDER, USER_DOB, USERNAME, USER_PASSWORD) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("ssssss", $firstname, $lastname, $gender, $dob, $username, $hashed_password);
     
     if ($stmt->execute()) {
-        echo "Sign up successful.";
+        echo "";
     } else {
         echo "Error: " . $stmt->error;
     }
@@ -117,7 +117,7 @@ if(isset($_POST['Signup_Submit'])) {
     <form action="upload.php" method="POST">
       <input type="text" name="username" placeholder="Username" required>
       <input type="password" name="password" placeholder="Password" required>
-      <a class="loginbutton" name="Login_Submit">Login</a>
+      <input type="submit" class="loginbutton" name="Login_Submit" value="Login">
     </form>
 
     <!-- Button-style link to signup.html -->
