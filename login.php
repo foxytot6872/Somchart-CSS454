@@ -40,7 +40,7 @@ if(isset($_POST['Signup_Submit'])) {
 
     $tablename = "USERDB_" . $id;
 
-    $stmt3 = $mysqli->prepare("CREATE TABLE $tablename LIKE BASE_TABLE;");
+    $stmt3 = $mysqli->prepare("CREATE TABLE '$tablename' LIKE BASE_TABLE;");
     if ($stmt3->execute()) {
         echo "";
     } else {

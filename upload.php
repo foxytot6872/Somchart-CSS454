@@ -1,9 +1,8 @@
 <?php require_once('Connect.php');
+session_start();
 
 //transition from login.php
 if (isset($_POST['Login_Submit'])) {
-    session_start();
-
     // Insert data from Login.php
     $username = $_POST['username'];
     $passwd = $_POST['password'];
@@ -38,15 +37,20 @@ if (isset($_POST['Login_Submit'])) {
             echo "Invalid username or password.";
             session_destroy();
             header("Location: login.php");
+            exit;
         }
     } else {
         echo "Invalid username or password.";
         session_destroy();
         header("Location: login.php");
+        exit;
     }
 
     $stmt->close();
 }
+
+
+//upload file
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Upload_Submit'])) {
   $id = $_SESSION["user_id"];
@@ -55,15 +59,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Upload_Submit'])) {
 
   $Filename = $_POST['File_Name'];
   $Filecontent = $_POST['File_Content'];
+  $Filetimestamp = date('Y-m-d H:i:s');
 
+  $ciphertext = openssl_encrypt($Filecontent, "AES-128-ECB", $AESkey, OPENSSL_RAW_DATA, "");
+  $ciphertext_b64 = base64_encode($ciphertext);
+  $Filehash = hash('sha256', $ciphertext_b64, false);
+  $FileHMAChash = hash_hmac('sha256', $ciphertext_b64, $Filetimestamp, false);
 
+  $q = "INSERT INTO all_file (FILE_NAME, USER_ID, CIPHERTEXT, HMACDIGEST) VALUES ('$Filename', '$id', '$ciphertext_b64', '$FileHMAChash');";
+  $mysqli->query($q) or die($mysqli->error);
+  $Fileid = $mysqli->insert_id;
 
+  $q2 = "INSERT INTO '$tablename' (FILE_ID, USER_ID, FILE_NAME, MERKLE_HASH, CIPHERTEXT, HMACDIGEST, UPLOADTIMESTAMP) VALUES ('$Fileid', '$id', '$Filename', '$Filehash', '$ciphertext_b64', '$FileHMAChash', '$Filetimestamp');";
+  $result2=$mysqli->query($q2);
+  if(!$result2){
+        echo "Insert failed. Error: ".$mysqli->error;
+  }
 }
+
+
+
+// logout
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Logout_Submit'])) {
   session_unset();
   session_destroy();
   header("Location: login.php");
+  exit;
 }
 ?>
 
