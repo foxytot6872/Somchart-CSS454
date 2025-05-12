@@ -5,8 +5,30 @@ if (empty($_SESSION['user_table'])) {
   header("Location: login.php");
   exit;
 }
+$id = $_SESSION["user_id"];
+$AESkey = $_SESSION["user_key"];
 $tablename = $_SESSION['user_table'];
 
+
+//Coming from edit_file.php
+if (isset($_POST['Edit_Submit'])) {
+  $editFileID = $_POST["fileid"];
+  $editFileName = $mysqli->real_escape_string($_POST["editFileName"]);
+  $editFileContent = $_POST["editFileContent"];
+  $newFiletimestamp = date('Y-m-d H:i:s');
+
+  $newciphertext = openssl_encrypt($editFileContent, "AES-128-ECB", $AESkey, OPENSSL_RAW_DATA);
+  $newciphertext_b64 = base64_encode($newciphertext);
+  $newFilehash = hash('sha256', $newciphertext_b64);
+  $newFileHMAChash = hash_hmac('sha256', $newciphertext_b64, $newFiletimestamp);
+
+  $q1 = "UPDATE all_file SET FILE_NAME = '$editFileName', CIPHERTEXT = '$newciphertext_b64', HMACDIGEST = '$newFileHMAChash' WHERE FILE_ID = '$editFileID'";
+    $mysqli->query($q1) or die($mysqli->error);
+
+  $q2 = "UPDATE $tablename SET FILE_NAME = '$editFileName', MERKLE_HASH = '$newFilehash', CIPHERTEXT = '$newciphertext_b64', HMACDIGEST = '$newFileHMAChash', UPLOADTIMESTAMP = '$newFiletimestamp' WHERE FILE_ID = '$editFileID'";
+    $mysqli->query($q2) or die($mysqli->error);
+
+}
 
 ?>
 

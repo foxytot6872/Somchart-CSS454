@@ -89,6 +89,19 @@ if ($result->num_rows === 1) {
       font-size: 14px;
     }
 
+    .gotoeditfilebox {
+      display: block;
+      background-color: #28a745;
+      color: white;
+      padding: 12px;
+      margin-top: 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+      text-decoration: none;
+    }
+
     .gotofilelistbox {
       display: block;
       background-color: #007BFF;
@@ -117,6 +130,7 @@ if ($result->num_rows === 1) {
     <label>Decrypted Content</label>
     <textarea rows="6" readonly><?= htmlspecialchars($Filecontent) ?></textarea>
 
+    <a class="gotoeditfilebox" href="edit_file.php?fid=<?= $row['FILE_ID'] ?>">Edit File</a>
     <a class="gotofilelistbox" href="filelist.php">⬅ Back to File List</a>
   </div>
 </body>
