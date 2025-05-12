@@ -181,15 +181,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Logout_Submit'])) {
     <h2>Upload Files</h2>
     <form action="upload.php" method="POST">
       <label>File Name</label>
+      <br>
       <input type="text" name='File_Name' placeholder="" required>
+      <br>
       <label>Message</label>
+      <br>
       <textarea name='File_Content' rows="5"></textarea>
+      <br>
       <input type="submit" class="uploadbox" name="Upload_Submit" value="Upload">
     </form>
 
+    <br>
     <!-- Button-style link to filelist.html -->
     <a class="gotofilelistbox" href="filelist.php">Go to file list</a>
       
+    <br>
     <form action="upload.php" method="POST">
       <input type="submit" class="logoutbox" name="Logout_Submit" value="Logout">
     </form>
