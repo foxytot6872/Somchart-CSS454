@@ -1,91 +1,74 @@
-<?php require_once('Connect.php');
+<?php
+require_once('Connect.php');
 session_start();
 
-//transition from login.php
+// LOGIN handling (if called from login)
 if (isset($_POST['Login_Submit'])) {
-    // Insert data from Login.php
     $username = $_POST['username'];
     $passwd = $_POST['password'];
 
-    // Validate inputs
     if (empty($username) || empty($passwd)) {
         echo "Username and password cannot be empty.";
         exit;
     }
 
-    // Use prepared statements to fetch the hashed password
     $stmt = $mysqli->prepare("SELECT USER_ID, USER_PASSWORD, USER_KEY FROM users WHERE USERNAME = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
-        // Fetch user details
         $row = $result->fetch_assoc();
-        $hashed_password = $row['USER_PASSWORD'];
-        $id = $row['USER_ID'];
-        $AESkey = $row['USER_KEY'];      
-        $tablename = "userdb_" . $id;  
-
-        // Verify the password
-        if (password_verify($passwd, $hashed_password)) {
-            $_SESSION["user_id"] = $id;
-            $_SESSION["user_key"] = $AESkey;
-            $_SESSION["user_table"] = $tablename;
-
+        if (password_verify($passwd, $row['USER_PASSWORD'])) {
+            $_SESSION["user_id"] = $row['USER_ID'];
+            $_SESSION["user_key"] = $row['USER_KEY'];
+            $_SESSION["user_table"] = "userdb_" . $row['USER_ID'];
         } else {
-            echo "Invalid username or password.";
             session_destroy();
-            header("Location: login.php");
+            header("Location: login.php?error=1");
             exit;
         }
     } else {
-        echo "Invalid username or password.";
         session_destroy();
-        header("Location: login.php");
+        header("Location: login.php?error=1");
         exit;
     }
-
     $stmt->close();
 }
 
-
-//upload file
-
+// FILE UPLOAD
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Upload_Submit'])) {
-  $id = $_SESSION["user_id"];
-  $AESkey = $_SESSION["user_key"];
-  $tablename = $_SESSION["user_table"];
+    $id = $_SESSION["user_id"];
+    $AESkey = $_SESSION["user_key"];
+    $tablename = $_SESSION["user_table"];
 
-  $Filename = $_POST['File_Name'];
-  $Filecontent = $_POST['File_Content'];
-  $Filetimestamp = date('Y-m-d H:i:s');
+    $Filename = $_POST['File_Name'];
+    $Filecontent = $_POST['File_Content'];
+    $Filetimestamp = date('Y-m-d H:i:s');
 
-  $ciphertext = openssl_encrypt($Filecontent, "AES-128-ECB", $AESkey, OPENSSL_RAW_DATA, "");
-  $ciphertext_b64 = base64_encode($ciphertext);
-  $Filehash = hash('sha256', $ciphertext_b64, false);
-  $FileHMAChash = hash_hmac('sha256', $ciphertext_b64, $Filetimestamp, false);
+    $ciphertext = openssl_encrypt($Filecontent, "AES-128-ECB", $AESkey, OPENSSL_RAW_DATA);
+    $ciphertext_b64 = base64_encode($ciphertext);
+    $Filehash = hash('sha256', $ciphertext_b64);
+    $FileHMAChash = hash_hmac('sha256', $ciphertext_b64, $Filetimestamp);
 
-  $q = "INSERT INTO all_file (FILE_NAME, USER_ID, CIPHERTEXT, HMACDIGEST) VALUES ('$Filename', '$id', '$ciphertext_b64', '$FileHMAChash');";
-  $mysqli->query($q) or die($mysqli->error);
-  $Fileid = $mysqli->insert_id;
+    $q1 = "INSERT INTO all_file (FILE_NAME, USER_ID, CIPHERTEXT, HMACDIGEST)
+           VALUES ('$Filename', '$id', '$ciphertext_b64', '$FileHMAChash')";
+    $mysqli->query($q1) or die($mysqli->error);
+    $Fileid = $mysqli->insert_id;
 
-  $q2 = "INSERT INTO $tablename (FILE_ID, USER_ID, FILE_NAME, MERKLE_HASH, CIPHERTEXT, HMACDIGEST, UPLOADTIMESTAMP) VALUES ('$Fileid', '$id', '$Filename', '$Filehash', '$ciphertext_b64', '$FileHMAChash', '$Filetimestamp');";
-  $result2=$mysqli->query($q2);
-  if(!$result2){
-        echo "Insert failed. Error: ".$mysqli->error;
-  }
+    $q2 = "INSERT INTO $tablename (FILE_ID, USER_ID, FILE_NAME, MERKLE_HASH, CIPHERTEXT, HMACDIGEST, UPLOADTIMESTAMP)
+           VALUES ('$Fileid', '$id', '$Filename', '$Filehash', '$ciphertext_b64', '$FileHMAChash', '$Filetimestamp')";
+    if (!$mysqli->query($q2)) {
+        echo "Insert failed: " . $mysqli->error;
+    }
 }
 
-
-
-// logout
-
+// LOGOUT
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Logout_Submit'])) {
-  session_unset();
-  session_destroy();
-  header("Location: login.php");
-  exit;
+    session_unset();
+    session_destroy();
+    header("Location: login.php");
+    exit;
 }
 ?>
 
@@ -119,85 +102,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Logout_Submit'])) {
       color: #333;
     }
 
-    .upload-box input[type="file"] {
-      display: block;
-      margin: 20px auto;
+    .upload-box input[type="text"],
+    .upload-box textarea {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
       font-size: 14px;
+      box-sizing: border-box;
     }
 
-    .uploadbox{
+    .button {
+      display: inline-block;
+      margin: 10px 5px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .button.primary {
       background-color: #28a745;
       color: white;
-      padding: 10px 25px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: background 0.3s;
     }
 
-    .gotofilelistbox{
-      background-color: #ACB6E5;
+    .button.secondary {
+      background-color: #007BFF;
       color: white;
-      padding: 10px 25px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 12px;
-      transition: background 0.3s;
     }
 
-    .logoutbox{
-      background-color:rgb(0, 0, 0);
+    .button.danger {
+      background-color: #dc3545;
       color: white;
-      padding: 10px 25px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 12px;
-      transition: background 0.3s;
     }
 
-    .upload-box input[type="submit"]:hover {
-      background-color: #218838;
+    .button:hover {
+      opacity: 0.9;
     }
 
-    .message {
+    .upload-box form,
+    .upload-box a {
       margin-top: 15px;
-      font-size: 14px;
-    }
-
-    .success {
-      color: green;
-    }
-
-    .error {
-      color: red;
     }
   </style>
 </head>
 <body>
   <div class="upload-box">
-    <h2>Upload Files</h2>
+    <h2>📤 Upload File</h2>
+
+    <!-- Upload Form -->
     <form action="upload.php" method="POST">
-      <label>File Name</label>
-      <br>
-      <input type="text" name='File_Name' placeholder="" required>
-      <br>
-      <label>Message</label>
-      <br>
-      <textarea name='File_Content' rows="5"></textarea>
-      <br>
-      <input type="submit" class="uploadbox" name="Upload_Submit" value="Upload">
+      <label for="File_Name">File Name</label>
+      <input type="text" id="File_Name" name="File_Name" required>
+
+      <label for="File_Content">Message Content</label>
+      <textarea id="File_Content" name="File_Content" rows="6" placeholder="Enter your message here..." required></textarea>
+
+      <input type="submit" class="button primary" name="Upload_Submit" value="Upload">
     </form>
 
-    <br>
-    <!-- Button-style link to filelist.html -->
-    <a class="gotofilelistbox" href="filelist.php">Go to file list</a>
-      
-    <br>
+    <!-- Go to File List -->
+    <a href="filelist.php" class="button secondary">📁 View Uploaded Files</a>
+
+    <!-- Logout -->
     <form action="upload.php" method="POST">
-      <input type="submit" class="logoutbox" name="Logout_Submit" value="Logout">
+      <input type="submit" class="button danger" name="Logout_Submit" value="🚪 Logout">
     </form>
   </div>
 </body>
