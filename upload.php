@@ -25,7 +25,7 @@ if (isset($_POST['Login_Submit'])) {
         $hashed_password = $row['USER_PASSWORD'];
         $id = $row['USER_ID'];
         $AESkey = $row['USER_KEY'];      
-        $tablename = "USERDB_" . $id;  
+        $tablename = "userdb_" . $id;  
 
         // Verify the password
         if (password_verify($passwd, $hashed_password)) {
@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Upload_Submit'])) {
   $mysqli->query($q) or die($mysqli->error);
   $Fileid = $mysqli->insert_id;
 
-  $q2 = "INSERT INTO '$tablename' (FILE_ID, USER_ID, FILE_NAME, MERKLE_HASH, CIPHERTEXT, HMACDIGEST, UPLOADTIMESTAMP) VALUES ('$Fileid', '$id', '$Filename', '$Filehash', '$ciphertext_b64', '$FileHMAChash', '$Filetimestamp');";
+  $q2 = "INSERT INTO $tablename (FILE_ID, USER_ID, FILE_NAME, MERKLE_HASH, CIPHERTEXT, HMACDIGEST, UPLOADTIMESTAMP) VALUES ('$Fileid', '$id', '$Filename', '$Filehash', '$ciphertext_b64', '$FileHMAChash', '$Filetimestamp');";
   $result2=$mysqli->query($q2);
   if(!$result2){
         echo "Insert failed. Error: ".$mysqli->error;
