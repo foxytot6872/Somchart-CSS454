@@ -15,12 +15,10 @@ $tablename = $_SESSION['user_table'];
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     $fileId = intval($_POST['delete_id']);
 
-    // Delete from user's private table
     $stmt1 = $mysqli->prepare("DELETE FROM `$tablename` WHERE FILE_ID = ?");
     $stmt1->bind_param("i", $fileId);
     $stmt1->execute();
 
-    // Optional: also delete from all_file table
     $stmt2 = $mysqli->prepare("DELETE FROM `all_file` WHERE FILE_ID = ?");
     $stmt2->bind_param("i", $fileId);
     $stmt2->execute();
@@ -46,6 +44,26 @@ $result = $mysqli->query($query);
     h2 {
       text-align: center;
       color: #333;
+    }
+
+    .action-buttons {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .top-btn {
+      display: inline-block;
+      background-color: #007BFF;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      margin: 0 10px;
+      font-size: 14px;
+    }
+
+    .top-btn:hover {
+      background-color: #0056b3;
     }
 
     table {
@@ -95,29 +113,18 @@ $result = $mysqli->query($query);
     .delete-btn:hover {
       background-color: #c82333;
     }
-
-    .back-btn {
-      display: block;
-      margin: 30px auto;
-      background-color: #28a745;
-      color: white;
-      padding: 12px 20px;
-      text-align: center;
-      width: 200px;
-      text-decoration: none;
-      border-radius: 8px;
-    }
-
-    .back-btn:hover {
-      background-color: #218838;
-    }
   </style>
 </head>
 <body>
 
   <h2>📁 Your Uploaded Files</h2>
-    <a href="integrity_report.php?>">Integrity Report</a>
-    
+
+  <!-- 🔘 Integrity + Upload Buttons -->
+  <div class="action-buttons">
+    <a href="integrity_report.php" class="top-btn">🔍 Integrity Report</a>
+    <a href="upload.php" class="top-btn" style="background-color: #28a745;">⬆ Upload New File</a>
+  </div>
+
   <table>
     <tr>
       <th>#</th>
@@ -136,13 +143,10 @@ $result = $mysqli->query($query);
         echo "<td>" . $row['UPLOADTIMESTAMP'] . "</td>";
         echo "<td>";
         echo "<a class='btn view-btn' href='view_file.php?fid={$row['FILE_ID']}'>View</a> ";
-
-        // 🗑 Delete form
         echo "<form style='display:inline;' method='POST' action='filelist.php' onsubmit=\"return confirm('Are you sure you want to delete this file?');\">";
         echo "<input type='hidden' name='delete_id' value='{$row['FILE_ID']}'>";
         echo "<button type='submit' class='btn delete-btn'>Delete</button>";
         echo "</form>";
-
         echo "</td>";
         echo "</tr>";
         $i++;
@@ -152,8 +156,6 @@ $result = $mysqli->query($query);
     }
     ?>
   </table>
-
-  <a class="back-btn" href="upload.php">⬅ Back to Upload</a>
 
 </body>
 </html>
