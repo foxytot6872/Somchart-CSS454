@@ -1,46 +1,45 @@
-<?php require_once('Connect.php');
+<?php
+require_once('Connect.php');
 session_start();
 
-if (empty($_SESSION['user_table'])) {
-  header("Location: login.php");
-  exit;
+// 🔐 Check login
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_table'])) {
+    header("Location: login.php");
+    exit;
 }
-$id = $_SESSION["user_id"];
-$AESkey = $_SESSION["user_key"];
+
+$userid = $_SESSION['user_id'];
 $tablename = $_SESSION['user_table'];
 
+// 🗑 Handle file deletion
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
+    $fileId = intval($_POST['delete_id']);
 
-//Coming from edit_file.php
-if (isset($_POST['Edit_Submit'])) {
-  $editFileID = $_POST["fileid"];
-  $editFileName = $mysqli->real_escape_string($_POST["editFileName"]);
-  $editFileContent = $_POST["editFileContent"];
-  $newFiletimestamp = date('Y-m-d H:i:s');
+    // Delete from user's private table
+    $stmt1 = $mysqli->prepare("DELETE FROM `$tablename` WHERE FILE_ID = ?");
+    $stmt1->bind_param("i", $fileId);
+    $stmt1->execute();
 
-  $newciphertext = openssl_encrypt($editFileContent, "AES-128-ECB", $AESkey, OPENSSL_RAW_DATA);
-  $newciphertext_b64 = base64_encode($newciphertext);
-  $newFilehash = hash('sha256', $newciphertext_b64);
-  $newFileHMAChash = hash_hmac('sha256', $newciphertext_b64, $newFiletimestamp);
-
-  $q1 = "UPDATE all_file SET FILE_NAME = '$editFileName', CIPHERTEXT = '$newciphertext_b64', HMACDIGEST = '$newFileHMAChash' WHERE FILE_ID = '$editFileID'";
-    $mysqli->query($q1) or die($mysqli->error);
-
-  $q2 = "UPDATE $tablename SET FILE_NAME = '$editFileName', MERKLE_HASH = '$newFilehash', CIPHERTEXT = '$newciphertext_b64', HMACDIGEST = '$newFileHMAChash', UPLOADTIMESTAMP = '$newFiletimestamp' WHERE FILE_ID = '$editFileID'";
-    $mysqli->query($q2) or die($mysqli->error);
-
+    // Optional: also delete from all_file table
+    $stmt2 = $mysqli->prepare("DELETE FROM `all_file` WHERE FILE_ID = ?");
+    $stmt2->bind_param("i", $fileId);
+    $stmt2->execute();
 }
 
+// 📄 Fetch all user files
+$query = "SELECT FILE_ID, FILE_NAME, UPLOADTIMESTAMP FROM `$tablename` ORDER BY UPLOADTIMESTAMP DESC";
+$result = $mysqli->query($query);
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Uploaded Files</title>
+  <title>Your Files</title>
   <style>
     body {
       font-family: "Segoe UI", sans-serif;
-      background: #f7f7f7;
+      background: linear-gradient(to right, #d9afd9, #97d9e1);
       padding: 40px;
     }
 
@@ -51,83 +50,109 @@ if (isset($_POST['Edit_Submit'])) {
 
     table {
       width: 90%;
-      margin: 20px auto;
+      margin: 0 auto;
       border-collapse: collapse;
       background-color: white;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     }
 
     th, td {
-      padding: 12px 20px;
-      border-bottom: 1px solid #ddd;
+      padding: 12px 18px;
+      border-bottom: 1px solid #ccc;
       text-align: left;
+      font-size: 14px;
     }
 
     th {
-      background-color: #4CAF50;
+      background-color: #007BFF;
       color: white;
     }
 
     tr:hover {
-      background-color: #f1f1f1;
+      background-color: #f9f9f9;
     }
 
-    .upload-again {
-      display: block;
-      width: 200px;
-      margin: 30px auto;
-      padding: 10px 20px;
-      text-align: center;
-      background-color: #007BFF;
+    .btn {
+      display: inline-block;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .view-btn {
+      background-color: #17a2b8;
       color: white;
+    }
+
+    .delete-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .delete-btn:hover {
+      background-color: #c82333;
+    }
+
+    .back-btn {
+      display: block;
+      margin: 30px auto;
+      background-color: #28a745;
+      color: white;
+      padding: 12px 20px;
+      text-align: center;
+      width: 200px;
       text-decoration: none;
       border-radius: 8px;
     }
 
-    .success-message {
-      text-align: center;
-      color: green;
-      font-size: 16px;
+    .back-btn:hover {
+      background-color: #218838;
     }
   </style>
 </head>
 <body>
 
-  <h2>Uploaded Files</h2>
+  <h2>📁 Your Uploaded Files</h2>
 
   <table>
-  <thead>
     <tr>
-      <th>No</th>
-      <th>Filename</th>
-      <th>Upload Time</th>
-      <th>Download File</th>
+      <th>#</th>
+      <th>File Name</th>
+      <th>Uploaded At</th>
+      <th>Actions</th>
     </tr>
-  </thead>
-  <tbody>
-    <?php $q="SELECT TREE_INDEX, FILE_ID, FILE_NAME, UPLOADTIMESTAMP FROM $tablename WHERE CIPHERTEXT IS NOT NULL";
-					$result=$mysqli->query($q);
-					if(!$result){
-						// what happens here
-						echo "Insert failed. Error: ".$mysqli->error;
-					}
-          while ($row = $result->fetch_assoc()): ?>
-      <tr>
-        <td><?= htmlspecialchars($row['TREE_INDEX']) ?></td>
-        <td>
-          <a href="view_file.php?fid=<?= $row['FILE_ID'] ?>">
-            <?= htmlspecialchars($row['FILE_NAME']) ?>
-          </a>
-        </td>
-        <td><?= htmlspecialchars($row['UPLOADTIMESTAMP']) ?></td>
-        <td>
-          <a href="download_file.php?fid=<?= $row['FILE_ID'] ?>">⬇ Retrieve</a>
-        </td>
-      </tr>
-    <?php endwhile; ?>
-  </tbody>
-</table>
 
-  <a class="upload-again" href="upload.php">Upload More Files</a>
+    <?php
+    if ($result && $result->num_rows > 0) {
+      $i = 1;
+      while ($row = $result->fetch_assoc()) {
+        echo "<tr>";
+        echo "<td>{$i}</td>";
+        echo "<td>" . htmlspecialchars($row['FILE_NAME']) . "</td>";
+        echo "<td>" . $row['UPLOADTIMESTAMP'] . "</td>";
+        echo "<td>";
+        echo "<a class='btn view-btn' href='view_file.php?fid={$row['FILE_ID']}'>View</a> ";
+
+        // 🗑 Delete form
+        echo "<form style='display:inline;' method='POST' action='filelist.php' onsubmit=\"return confirm('Are you sure you want to delete this file?');\">";
+        echo "<input type='hidden' name='delete_id' value='{$row['FILE_ID']}'>";
+        echo "<button type='submit' class='btn delete-btn'>Delete</button>";
+        echo "</form>";
+
+        echo "</td>";
+        echo "</tr>";
+        $i++;
+      }
+    } else {
+      echo "<tr><td colspan='4' style='text-align:center;'>No files found.</td></tr>";
+    }
+    ?>
+  </table>
+
+  <a class="back-btn" href="upload.php">⬅ Back to Upload</a>
+
 </body>
 </html>
