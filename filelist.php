@@ -101,6 +101,7 @@ if (isset($_POST['Edit_Submit'])) {
       <th>No</th>
       <th>Filename</th>
       <th>Upload Time</th>
+      <th>Download File</th>
     </tr>
   </thead>
   <tbody>
@@ -115,11 +116,13 @@ if (isset($_POST['Edit_Submit'])) {
         <td><?= htmlspecialchars($row['TREE_INDEX']) ?></td>
         <td>
           <a href="view_file.php?fid=<?= $row['FILE_ID'] ?>">
-          <a href="download_file.php?fid=<?= $row['FILE_ID'] ?>">⬇ Retrieve</a>
             <?= htmlspecialchars($row['FILE_NAME']) ?>
           </a>
         </td>
         <td><?= htmlspecialchars($row['UPLOADTIMESTAMP']) ?></td>
+        <td>
+          <a href="download_file.php?fid=<?= $row['FILE_ID'] ?>">⬇ Retrieve</a>
+        </td>
       </tr>
     <?php endwhile; ?>
   </tbody>
