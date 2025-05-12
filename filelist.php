@@ -116,7 +116,8 @@ $result = $mysqli->query($query);
 <body>
 
   <h2>📁 Your Uploaded Files</h2>
-
+    <a href="integrity_report.php?>">Integrity Report</a>
+    
   <table>
     <tr>
       <th>#</th>
