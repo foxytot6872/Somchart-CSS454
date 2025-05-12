@@ -1,23 +1,13 @@
-<?php
-// File: file_list.php
+<?php require_once('Connect.php');
+session_start();
 
-$host = 'localhost';
-$db   = 'your_database';
-$user = 'your_db_user';
-$pass = 'your_db_password';
-
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    $stmt = $pdo->query("SELECT id, filename, filetype, upload_time FROM uploads ORDER BY upload_time DESC");
-    $files = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-} catch (PDOException $e) {
-    die("Database error: " . $e->getMessage());
+if (empty($_SESSION['user_table'])) {
+  header("Location: login.php");
+  exit;
 }
+$tablename = $_SESSION['user_table'];
 
-$uploadedCount = isset($_GET['uploaded']) ? intval($_GET['uploaded']) : 0;
+
 ?>
 
 <!DOCTYPE html>
@@ -83,24 +73,34 @@ $uploadedCount = isset($_GET['uploaded']) ? intval($_GET['uploaded']) : 0;
 
   <h2>Uploaded Files</h2>
 
-  <?php if ($uploadedCount > 0): ?>
-    <div class="success-message"><?= $uploadedCount ?> file(s) uploaded successfully!</div>
-  <?php endif; ?>
-
   <table>
+  <thead>
     <tr>
+      <th>No</th>
       <th>Filename</th>
-      <th>File Type</th>
       <th>Upload Time</th>
     </tr>
-    <?php foreach ($files as $file): ?>
+  </thead>
+  <tbody>
+    <?php $q="SELECT TREE_INDEX, FILE_ID, FILE_NAME, UPLOADTIMESTAMP FROM $tablename WHERE CIPHERTEXT IS NOT NULL";
+					$result=$mysqli->query($q);
+					if(!$result){
+						// what happens here
+						echo "Insert failed. Error: ".$mysqli->error;
+					}
+          while ($row = $result->fetch_assoc()): ?>
       <tr>
-        <td><?= htmlspecialchars($file['filename']) ?></td>
-        <td><?= htmlspecialchars($file['filetype']) ?></td>
-        <td><?= $file['upload_time'] ?></td>
+        <td><?= htmlspecialchars($row['TREE_INDEX']) ?></td>
+        <td>
+          <a href="view_file.php?fid=<?= $row['FILE_ID'] ?>">
+            <?= htmlspecialchars($row['FILE_NAME']) ?>
+          </a>
+        </td>
+        <td><?= htmlspecialchars($row['UPLOADTIMESTAMP']) ?></td>
       </tr>
-    <?php endforeach; ?>
-  </table>
+    <?php endwhile; ?>
+  </tbody>
+</table>
 
   <a class="upload-again" href="upload.php">Upload More Files</a>
 </body>
