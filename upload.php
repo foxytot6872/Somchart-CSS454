@@ -25,63 +25,46 @@ if (isset($_POST['Login_Submit'])) {
         $row = $result->fetch_assoc();
         $hashed_password = $row['USER_PASSWORD'];
         $id = $row['USER_ID'];
-        $AESkey = $row['USER_KEY'];        
+        $AESkey = $row['USER_KEY'];      
+        $tablename = "USERDB_" . $id;  
 
         // Verify the password
         if (password_verify($passwd, $hashed_password)) {
             $_SESSION["user_id"] = $id;
             $_SESSION["user_key"] = $AESkey;
+            $_SESSION["user_table"] = $tablename;
 
         } else {
             echo "Invalid username or password.";
+            session_destroy();
             header("Location: login.php");
         }
     } else {
         echo "Invalid username or password.";
+        session_destroy();
         header("Location: login.php");
     }
 
     $stmt->close();
 }
 
-/*
-$message = "";
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['uploaded_files'])) {
-    $host = 'localhost';
-    $db   = 'your_database';
-    $user = 'your_db_user';
-    $pass = 'your_db_password';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Upload_Submit'])) {
+  $id = $_SESSION["user_id"];
+  $AESkey = $_SESSION["user_key"];
+  $tablename = $_SESSION["user_table"];
 
-    try {
-        $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+  $Filename = $_POST['File_Name'];
+  $Filecontent = $_POST['File_Content'];
 
-        $total = count($_FILES['uploaded_files']['name']);
-        $successCount = 0;
 
-        for ($i = 0; $i < $total; $i++) {
-            if ($_FILES['uploaded_files']['error'][$i] === UPLOAD_ERR_OK) {
-                $fileName = $_FILES['uploaded_files']['name'][$i];
-                $fileTmp = $_FILES['uploaded_files']['tmp_name'][$i];
-                $fileType = $_FILES['uploaded_files']['type'][$i];
-                $fileData = file_get_contents($fileTmp);
 
-                $stmt = $pdo->prepare("INSERT INTO uploads (filename, filetype, filedata, upload_time) VALUES (?, ?, ?, NOW())");
-                if ($stmt->execute([$fileName, $fileType, $fileData])) {
-                    $successCount++;
-                }
-            }
-        }
-
-        // Redirect to list page after upload
-        header("Location: file_list.php?uploaded=$successCount");
-        exit;
-
-    } catch (PDOException $e) {
-        $message = "<div class='message error'>Database error: " . $e->getMessage() . "</div>";
-    }
 }
-    */
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Logout_Submit'])) {
+  session_unset();
+  session_destroy();
+  header("Location: login.php");
+}
 ?>
 
 <!DOCTYPE html>
@@ -131,6 +114,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['uploaded_files'])) {
       transition: background 0.3s;
     }
 
+    .gotofilelistbox{
+      background-color: #ACB6E5;
+      color: white;
+      padding: 10px 25px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.3s;
+    }
+
+    .logoutbox{
+      background-color:rgb(0, 0, 0);
+      color: white;
+      padding: 10px 25px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.3s;
+    }
+
     .upload-box input[type="submit"]:hover {
       background-color: #218838;
     }
@@ -152,9 +157,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['uploaded_files'])) {
 <body>
   <div class="upload-box">
     <h2>Upload Files</h2>
-    <form action="" method="POST" enctype="multipart/form-data">
-      <input type="file" name="uploaded_files[]" multiple required>
-      <a class="uploadbox" href="filelist.php">UPLOAD</a>
+    <form action="upload.php" method="POST">
+      <label>File Name</label>
+      <input type="text" name='File_Name' placeholder="" required>
+      <label>Message</label>
+      <textarea name='File_Content' rows="5"></textarea>
+      <input type="submit" class="uploadbox" name="Upload_Submit" value="Upload">
+    </form>
+
+    <!-- Button-style link to filelist.html -->
+    <a class="gotofilelistbox" href="filelist.php">Go to file list</a>
+      
+    <form action="upload.php" method="POST">
+      <input type="submit" class="logoutbox" name="Logout_Submit" value="Logout">
     </form>
   </div>
 </body>
