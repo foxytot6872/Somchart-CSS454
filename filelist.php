@@ -93,6 +93,7 @@ $tablename = $_SESSION['user_table'];
         <td><?= htmlspecialchars($row['TREE_INDEX']) ?></td>
         <td>
           <a href="view_file.php?fid=<?= $row['FILE_ID'] ?>">
+          <a href="download_file.php?fid=<?= $row['FILE_ID'] ?>">⬇ Retrieve</a>
             <?= htmlspecialchars($row['FILE_NAME']) ?>
           </a>
         </td>
