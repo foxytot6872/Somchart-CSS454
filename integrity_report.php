@@ -38,8 +38,8 @@ for ($i = 0; $i < $total; $i += 2) {
         // original parent
         $origParent = hash('sha256', $a['MERKLE_HASH'] . $b['MERKLE_HASH']);
         // recompute leaf-hashes from ciphertext (assuming base64 stored)
-        $newA = hash('sha256', base64_decode($a['CIPHERTEXT']));
-        $newB = hash('sha256', base64_decode($b['CIPHERTEXT']));
+        $newA = hash('sha256', $a['CIPHERTEXT']);
+        $newB = hash('sha256', $b['CIPHERTEXT']);
         $newParent = hash('sha256', $newA . $newB);
 
         if ($origParent === $newParent) {
@@ -59,7 +59,7 @@ for ($i = 0; $i < $total; $i += 2) {
     } else {
         // odd one out: only $rows[$i]
         $c = $rows[$i];
-        $newC = hash('sha256', base64_decode($c['CIPHERTEXT']));
+        $newC = hash('sha256', $c['CIPHERTEXT']);
         $leafOk = ($c['MERKLE_HASH'] === $newC) ? 'OK' : 'CORRUPT';
         $report[] = [
             'pair'   => "{$c['TREE_INDEX']}",
