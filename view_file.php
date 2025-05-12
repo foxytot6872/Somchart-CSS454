@@ -2,17 +2,17 @@
 require_once('Connect.php');
 session_start();
 
-if (empty($_SESSION['user_key']) || empty($_GET['fileid'])) {
+if (empty($_SESSION['user_key']) || empty($_GET['fid'])) {
   header("Location: login.php");
   exit;
 }
 
 $AESkey = $_SESSION["user_key"];
 $tablename = $_SESSION['user_table'];
-$fileId = intval($_GET['fileid']); // Get TREE_INDEX from URL
+$fileId = intval($_GET['fid']); 
 
 // Securely fetch the file from the user's table
-$stmt = $mysqli->prepare("SELECT * FROM $tablename WHERE TREE_INDEX = ?");
+$stmt = $mysqli->prepare("SELECT * FROM $tablename WHERE FILE_ID = ?");
 $stmt->bind_param("i", $fileId);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -20,7 +20,7 @@ $result = $stmt->get_result();
 if ($result->num_rows === 1) {
     $row = $result->fetch_assoc();
 
-    $Filename = $row['File_Name'];
+    $Filename = $row['FILE_NAME'];
     $ciphertext_b64 = $row['CIPHERTEXT'];
     $FileHMAChash = $row['HMACDIGEST'];
     $Filetimestamp = $row['UPLOADTIMESTAMP'];
