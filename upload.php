@@ -2,6 +2,8 @@
 
 //transition from login.php
 if (isset($_POST['Login_Submit'])) {
+    session_start();
+
     // Insert data from Login.php
     $username = $_POST['username'];
     $passwd = $_POST['password'];
@@ -13,7 +15,7 @@ if (isset($_POST['Login_Submit'])) {
     }
 
     // Use prepared statements to fetch the hashed password
-    $stmt = $mysqli->prepare("SELECT USER_ID, USER_PASSWORD FROM users WHERE USERNAME = ?");
+    $stmt = $mysqli->prepare("SELECT USER_ID, USER_PASSWORD, USER_KEY FROM users WHERE USERNAME = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -23,15 +25,20 @@ if (isset($_POST['Login_Submit'])) {
         $row = $result->fetch_assoc();
         $hashed_password = $row['USER_PASSWORD'];
         $id = $row['USER_ID'];
+        $AESkey = $row['USER_KEY'];        
 
         // Verify the password
         if (password_verify($passwd, $hashed_password)) {
-            echo "";
+            $_SESSION["user_id"] = $id;
+            $_SESSION["user_key"] = $AESkey;
+
         } else {
             echo "Invalid username or password.";
+            header("Location: login.php");
         }
     } else {
         echo "Invalid username or password.";
+        header("Location: login.php");
     }
 
     $stmt->close();
@@ -77,7 +84,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['uploaded_files'])) {
     */
 ?>
 
-<!-- Upload HTML UI -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
