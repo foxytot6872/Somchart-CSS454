@@ -45,10 +45,18 @@ if ($result->num_rows !== 1) {
 $row = $result->fetch_assoc();
 $Filename = $row['FILE_NAME'];
 $ciphertext_b64 = $row['CIPHERTEXT'];
-$FileTime = $row['UPLOADTIMESTAMP'];
+$FileHMAChash = $row['HMACDIGEST'];
+$Filetimestamp = $row['UPLOADTIMESTAMP'];
+// HMAC verification
+$NewHMAC = hash_hmac('sha256', $ciphertext_b64, $Filetimestamp, false);
 
-// ✅ Decrypt
-$plaintext = openssl_decrypt(base64_decode($ciphertext_b64), "AES-128-ECB", $AESkey, OPENSSL_RAW_DATA);
+if (hash_equals($FileHMAChash, $NewHMAC)) {
+  $plaintext = openssl_decrypt(base64_decode($ciphertext_b64), "AES-128-ECB", $AESkey, OPENSSL_RAW_DATA);
+} else {
+  echo "<script>alert('⚠️ File integrity check failed.'); window.location.href='filelist.php';</script>";
+  exit;
+}
+
 ?>
 
 <!DOCTYPE html>
