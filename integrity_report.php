@@ -10,8 +10,13 @@ $tablename = $_SESSION['user_table'];
 
 // 1) Fetch files by TREE_INDEX
 $stmt = $mysqli->prepare("
-    SELECT TREE_INDEX, FILE_ID, FILE_NAME, MERKLE_HASH, CIPHERTEXT
-    FROM $tablename
+    SELECT 
+      TREE_INDEX AS parent_index,
+      FILE_NAME AS parent_name,
+      MERKLE_HASH AS parent_hash,
+      LEFTCHILD AS left_index,
+    FROM `{$tablename}`
+    WHERE NODE_TYPE = 'Parent'
     ORDER BY TREE_INDEX
 ");
 $stmt->execute();
@@ -26,37 +31,72 @@ $stmt->close();
 // 2) 1-level Merkle check in pairs
 $report = [];
 $total = count($rows);
-for ($i = 0; $i < $total; $i += 2) {
-    if (isset($rows[$i+1])) {
-        $a = $rows[$i];
-        $b = $rows[$i+1];
+foreach ($parents as $node) {
+    $pIdx   = $node['parent_index'];
+    $pName  = $node['parent_name'];
+    $origPH = $node['parent_hash'];
+    $lIdx   = $node['left_index'];
+    $rIdx   = $lIdx + 1;
 
-        $origParent = hash('sha256', $a['MERKLE_HASH'] . $b['MERKLE_HASH']);
-        $newA = hash('sha256', $a['CIPHERTEXT']);
-        $newB = hash('sha256', $b['CIPHERTEXT']);
-        $newParent = hash('sha256', $newA . $newB);
+    // Check whether TREE_INDEX = $rIdx is really a leaf for this user:
+    $chk = $mysqli->prepare("
+      SELECT NODE_TYPE
+        FROM `{$tablename}`
+       WHERE TREE_INDEX = ?
+         AND USER_ID   = ?
+    ");
+    $chk->bind_param("ii", $rIdx, $userId);
+    $chk->execute();
+    $rowChk = $chk->get_result()->fetch_assoc();
+    $chk->close();
 
-        if ($origParent === $newParent) {
-            $status = '✅ OK';
-        } else {
-            $statusA = ($a['MERKLE_HASH'] === $newA) ? '✅ OK' : '❌ CORRUPT';
-            $statusB = ($b['MERKLE_HASH'] === $newB) ? '✅ OK' : '❌ CORRUPT';
-            $status = "Pair mismatch → File {$a['TREE_INDEX']} is $statusA, File {$b['TREE_INDEX']} is $statusB";
-        }
-
-        $report[] = [
-            'pair' => "{$a['TREE_INDEX']} - {$b['TREE_INDEX']}",
-            'status' => $status
-        ];
-    } else {
-        $c = $rows[$i];
-        $newC = hash('sha256', $c['CIPHERTEXT']);
-        $leafOk = ($c['MERKLE_HASH'] === $newC) ? '✅ OK' : '❌ CORRUPT';
-        $report[] = [
-            'pair' => "{$c['TREE_INDEX']}",
-            'status' => "Single leaf is $leafOk"
-        ];
+    // If it doesn’t exist or isn’t a leaf, duplicate:
+    if (! $rowChk || $rowChk['NODE_TYPE'] !== 'Leaf') {
+        $rIdx = $lIdx;
     }
+
+    // Fetch leaf data for both children in one go:
+    $in = $mysqli->prepare("
+      SELECT TREE_INDEX, MERKLE_HASH, CIPHERTEXT
+        FROM `{$tablename}`
+       WHERE TREE_INDEX IN (?, ?)
+         AND USER_ID   = ?
+    ");
+    $in->bind_param("iii", $lIdx, $rIdx, $userId);
+    $in->execute();
+    $children = $in->get_result()->fetch_all(MYSQLI_ASSOC);
+    $in->close();
+
+    // Map them by TREE_INDEX:
+    $map = [];
+    foreach ($children as $c) {
+        $map[$c['TREE_INDEX']] = $c;
+    }
+
+    // Recompute each leaf‐hash (we originally hashed the base64 string):
+    $hL = hash('sha256', $map[$lIdx]['CIPHERTEXT']);
+    $hR = hash('sha256', $map[$rIdx]['CIPHERTEXT']);
+
+    // New parent:
+    $newPH = hash('sha256', $hL . $hR);
+
+    // Compare:
+    if ($newPH === $origPH) {
+        $status = "✅ {$pName} is OK";
+    } else {
+        $c1ok = ($map[$lIdx]['MERKLE_HASH'] === $hL)
+                ? "✅ File {$lIdx} is OK" : "❌ File {$lIdx} is CORRUPT";
+        $c2ok = ($map[$rIdx]['MERKLE_HASH'] === $hR)
+                ? "✅ File {$rIdx} is OK" : "❌ File {$rIdx} is CORRUPT";
+        $status = "⚠️ File mismatch → {$c1ok}; {$c2ok}";
+    }
+
+    $report[] = [
+        'children' => ($lIdx === $rIdx)
+                       ? "{$lIdx} (duplicated)"
+                       : "{$lIdx} & {$rIdx}",
+        'status'   => $status
+    ];
 }
 ?>
 <!DOCTYPE html>
@@ -138,12 +178,12 @@ for ($i = 0; $i < $total; $i += 2) {
     <h2>🧪 Merkle Integrity Report — User #<?= htmlspecialchars($userId) ?></h2>
 
     <table>
-      <tr><th>Tree Index Pair</th><th>Status</th></tr>
+      <tr><th>Node Pair</th><th>Status</th></tr>
       <?php foreach ($report as $row):
         $cls = (strpos($row['status'], 'CORRUPT') !== false) ? 'CORRUPT' : 'OK';
       ?>
       <tr class="<?= $cls ?>">
-        <td><?= htmlspecialchars($row['pair']) ?></td>
+        <td><?= htmlspecialchars($row['children']) ?></td>
         <td><?= htmlspecialchars($row['status']) ?></td>
       </tr>
       <?php endforeach; ?>
