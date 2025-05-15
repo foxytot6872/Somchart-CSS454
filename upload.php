@@ -61,6 +61,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Upload_Submit'])) {
     if (!$mysqli->query($q2)) {
         echo "Insert failed: " . $mysqli->error;
     }
+
+    $q3 = "UPDATE users SET FILE_NUM = FILE_NUM + 1 WHERE USER_ID = '$id'";
+    $mysqli->query($q3) or die($mysqli->error);
 }
 
 // LOGOUT
