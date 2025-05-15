@@ -10,6 +10,27 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_table'])) {
 
 $userid = $_SESSION['user_id'];
 $tablename = $_SESSION['user_table'];
+$AESkey = $_SESSION["user_key"];
+
+
+//Coming from edit_file.php
+if (isset($_POST['Edit_Submit'])) {
+  $editFileID = $_POST["fileid"];
+  $editFileName = $mysqli->real_escape_string($_POST["editFileName"]);
+  $editFileContent = $_POST["editFileContent"];
+  $newFiletimestamp = date('Y-m-d H:i:s');
+
+  $newciphertext = openssl_encrypt($editFileContent, "AES-128-ECB", $AESkey, OPENSSL_RAW_DATA);
+  $newciphertext_b64 = base64_encode($newciphertext);
+  $newFilehash = hash('sha256', $newciphertext_b64);
+  $newFileHMAChash = hash_hmac('sha256', $newciphertext_b64, $newFiletimestamp);
+
+  $q1 = "UPDATE all_file SET FILE_NAME = '$editFileName', CIPHERTEXT = '$newciphertext_b64', HMACDIGEST = '$newFileHMAChash' WHERE FILE_ID = '$editFileID'";
+    $mysqli->query($q1) or die($mysqli->error);
+
+  $q2 = "UPDATE $tablename SET FILE_NAME = '$editFileName', MERKLE_HASH = '$newFilehash', CIPHERTEXT = '$newciphertext_b64', HMACDIGEST = '$newFileHMAChash', UPLOADTIMESTAMP = '$newFiletimestamp' WHERE FILE_ID = '$editFileID'";
+    $mysqli->query($q2) or die($mysqli->error);
+}
 
 // 🗑 Handle file deletion
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
@@ -25,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
 }
 
 // 📄 Fetch all user files
-$query = "SELECT FILE_ID, FILE_NAME, UPLOADTIMESTAMP FROM `$tablename` ORDER BY UPLOADTIMESTAMP DESC";
+$query = "SELECT FILE_ID, FILE_NAME, UPLOADTIMESTAMP FROM `$tablename` ORDER BY TREE_INDEX ASC";
 $result = $mysqli->query($query);
 ?>
 

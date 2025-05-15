@@ -147,8 +147,10 @@ if (hash_equals($FileHMAChash, $NewHMAC)) {
 
     <div class="content-block">
       <label for="content">Content:</label>
-      <textarea id="content" readonly><?= htmlspecialchars($plaintext) ?></textarea>
+      <textarea readonly><?= htmlspecialchars($plaintext) ?></textarea>
     </div>
+    <a class="gotoeditfilebox" href="edit_file.php?fid=<?= $row['FILE_ID'] ?>">Edit File</a>
+
 
     <form method="POST" onsubmit="return confirm('Are you sure you want to delete this file?');">
       <input type="hidden" name="delete_id" value="<?= $fileId ?>">
