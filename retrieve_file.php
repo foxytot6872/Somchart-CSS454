@@ -27,7 +27,7 @@ if (isset($_POST['search'])) {
     }
 
     if (!isset($bloom[$hash])) {
-        $message = "❌ No file name here";
+        $message = "❌ File name mismatch";
     } else {
         $stmt = $mysqli->prepare("SELECT FILE_ID, FILE_NAME FROM `$tablename` WHERE FILE_NAME LIKE ?");
         $stmt->bind_param("s", $safeSearch);
@@ -35,7 +35,7 @@ if (isset($_POST['search'])) {
         $results = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
         if (empty($results)) {
-            $message = "❌ No file name here (false positive)";
+            $message = "❌ File name mismatch (false positive)";
         }
     }
 }
@@ -111,7 +111,7 @@ if (isset($_POST['search'])) {
 <body>
 
   <div class="container">
-    <h2>🔍 Search and Retrieve Your Files</h2>
+    <h2>🔍 Search and Download Your Files</h2>
 
     <form method="POST">
       <input type="text" name="filename" placeholder="Enter file name..." value="<?= htmlspecialchars($searchName) ?>" required>
@@ -125,7 +125,7 @@ if (isset($_POST['search'])) {
           <?php foreach ($results as $file): ?>
             <li style="margin-bottom: 12px;">
               <strong><?= htmlspecialchars($file['FILE_NAME']) ?></strong><br>
-              <a class="download-link" href="download_file.php?fid=<?= $file['FILE_ID'] ?>">⬇ Retrieve File</a>
+              <a class="download-link" href="download_file.php?fid=<?= $file['FILE_ID'] ?>">⬇ Download File</a>
             </li>
           <?php endforeach; ?>
         </ul>

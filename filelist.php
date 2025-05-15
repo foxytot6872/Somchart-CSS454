@@ -144,7 +144,7 @@ $result = $mysqli->query($query);
 <div class="action-buttons">
     <a href="integrity_report.php" class="top-btn">🔍 Integrity Report</a>
     <a href="upload.php" class="top-btn" style="background-color: #28a745;">⬆ Upload New File</a>
-    <a href="retrieve_file.php" class="top-btn" style="background-color: #ffc107; color: black;">📥 Retrieve File</a>
+    <a href="retrieve_file.php" class="top-btn" style="background-color: #ffc107; color: black;">📥 Search</a>
 </div>
 
 
