@@ -86,10 +86,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Upload_Submit'])) {
     $mysqli->query("TRUNCATE TABLE `{$tablename}`")
         or die("Could not clear Merkle table: " . $mysqli->error);
 
-    // Step 1.2: clear out the old Merkle table
-    $mysqli->query("CREATE TABLE `{$tablename}` LIKE base_table;")
-        or die("Could not create user table: " . $mysqli->error);
-
     // Step 2: re-insert leaves into your Merkle table
     $stmtIns = $mysqli->prepare("
       INSERT INTO `{$tablename}`
@@ -149,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Upload_Submit'])) {
           $id,
           $parentName,
           $parentHash,
-          $left['TREE_INDEX'],
+          $left['TREE_INDEX']
         );
         $stmtPar->execute() or die("Parent insert failed: " . $stmtPar->error);
     }
