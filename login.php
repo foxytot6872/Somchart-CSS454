@@ -11,14 +11,13 @@ if(isset($_POST['Signup_Submit'])) {
     $password = $_POST['su_password'];
     $AESkey = bin2hex(random_bytes(16));
     $file_num = 0;
-    $null = null;
 
     // Hash the password
     $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
     // Use prepared statements to insert user data
-    $stmt = $mysqli->prepare("INSERT INTO users (USER_ID,USER_FIRSTNAME, USER_SURNAME, USER_GENDER, USER_DOB, USERNAME, USER_PASSWORD, USER_KEY,FILE_NUM) VALUES (?, ?, ?, ?, ?, ?, ?,?,?)");
-    $stmt->bind_param("isssssssi",$null, $firstname, $lastname, $gender, $dob, $username, $hashed_password, $AESkey,$file_num);
+    $stmt = $mysqli->prepare("INSERT INTO users (USER_FIRSTNAME, USER_SURNAME, USER_GENDER, USER_DOB, USERNAME, USER_PASSWORD, USER_KEY, FILE_NUM) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssssssi", $firstname, $lastname, $gender, $dob, $username, $hashed_password, $AESkey, $file_num);
     
     if ($stmt->execute()) {
         echo "";
