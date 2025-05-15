@@ -118,21 +118,27 @@ if (isset($_POST['search'])) {
       <button type="submit" name="search" class="search-btn">Search</button>
     </form>
 
-    <?php if (!empty($results)): ?>
-      <div class="result-box">
-        <h3>📄 Matching Files:</h3>
-        <ul style="list-style: none; padding: 0;">
-          <?php foreach ($results as $file): ?>
-            <li style="margin-bottom: 12px;">
-              <strong><?= htmlspecialchars($file['FILE_NAME']) ?></strong><br>
-              <a class="download-link" href="download_file.php?fid=<?= $file['FILE_ID'] ?>">⬇ Download File</a>
-            </li>
-          <?php endforeach; ?>
-        </ul>
-      </div>
-    <?php elseif ($message): ?>
-      <div class="message"><?= $message ?></div>
-    <?php endif; ?>
+   <?php if (!empty($results)): ?>
+  <div class="result-box">
+    <h3>📄 Matching Files:</h3>
+    <ul style="list-style: none; padding: 0;">
+      <?php foreach ($results as $file): ?>
+        <li style="margin-bottom: 12px;">
+          <strong><?= htmlspecialchars($file['FILE_NAME']) ?></strong><br>
+          <a class="download-link" href="download_file.php?fid=<?= $file['FILE_ID'] ?>">⬇ Retrieve File</a>
+        </li>
+      <?php endforeach; ?>
+    </ul>
+  </div>
+<?php elseif ($message): ?>
+  <div class="message"><?= $message ?></div>
+<?php endif; ?>
+
+<!-- 🔙 Back button -->
+<form action="filelist.php" method="get" style="margin-top: 30px;">
+  <button type="submit" class="search-btn" style="background-color: #6c757d;">🔙 Back to My Files</button>
+</form>
+
   </div>
 
 </body>
