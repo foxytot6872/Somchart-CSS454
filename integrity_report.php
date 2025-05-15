@@ -14,23 +14,18 @@ $stmt = $mysqli->prepare("
       TREE_INDEX AS parent_index,
       FILE_NAME AS parent_name,
       MERKLE_HASH AS parent_hash,
-      LEFTCHILD AS left_index,
+      LEFTCHILD AS left_index
     FROM `{$tablename}`
     WHERE NODE_TYPE = 'Parent'
     ORDER BY TREE_INDEX
 ");
 $stmt->execute();
-$result = $stmt->get_result();
-
-$rows = [];
-while ($r = $result->fetch_assoc()) {
-    $rows[] = $r;
-}
+$parents = $stmt->get_result();
 $stmt->close();
 
-// 2) 1-level Merkle check in pairs
+
 $report = [];
-$total = count($rows);
+
 foreach ($parents as $node) {
     $pIdx   = $node['parent_index'];
     $pName  = $node['parent_name'];
