@@ -39,7 +39,7 @@ if (isset($_POST['Edit_Submit'])) {
         WHERE USER_ID = ? AND NODE_TYPE = 'Leaf'
         ORDER BY FILE_ID 
     ");
-    $stmtL->bind_param("i", $editFileID);
+    $stmtL->bind_param("i", $userid);
     $stmtL->execute();
     $resL = $stmtL->get_result();
     while ($r = $resL->fetch_assoc()) {
@@ -63,7 +63,7 @@ if (isset($_POST['Edit_Submit'])) {
         $stmtIns->bind_param(
           "iisssssis",
           $leaf['FILE_ID'],       // FILE_ID
-          $editFileID,            // USER_ID
+          $userid,            // USER_ID
           $leaf['FILE_NAME'],     // FILE_NAME
           $leaf['MERKLE_HASH'],   // MERKLE_HASH
           $leaf['CIPHERTEXT'],    // CIPHERTEXT
@@ -80,7 +80,7 @@ if (isset($_POST['Edit_Submit'])) {
     $leafRows = [];
     $res2 = $mysqli->query("SELECT TREE_INDEX, MERKLE_HASH 
                             FROM `{$tablename}` 
-                            WHERE USER_ID = {$editFileID} 
+                            WHERE USER_ID = {$userid} 
                               AND NODE_TYPE = 'Leaf'
                             ORDER BY TREE_INDEX")
           or die($mysqli->error);
@@ -107,7 +107,7 @@ if (isset($_POST['Edit_Submit'])) {
 
         $stmtPar->bind_param(
           "issi",
-          $editFileID,
+          $userid,
           $parentName,
           $parentHash,
           $left['TREE_INDEX']
