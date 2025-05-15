@@ -132,6 +132,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     $q3 = "UPDATE users SET FILE_NUM = FILE_NUM - 1 WHERE USER_ID = '$userid'";
     $mysqli->query($q3) or die($mysqli->error);
 
+    // Step 1: reload *all* leaves (from all_file) in chronological order
+    $leafs = [];
+    $stmtL = $mysqli->prepare("
+        SELECT FILE_ID, FILE_NAME, MERKLE_HASH, CIPHERTEXT, HMACDIGEST, UPLOADTIMESTAMP
+        FROM `{$tablename}`
+        WHERE USER_ID = ? AND NODE_TYPE = 'Leaf'
+        ORDER BY FILE_ID 
+    ");
+    $stmtL->bind_param("i", $userid);
+    $stmtL->execute();
+    $resL = $stmtL->get_result();
+    while ($r = $resL->fetch_assoc()) {
+        $leafs[] = $r;
+    }
+    $stmtL->close();
+
         // Step 1.1: clear out the old Merkle table
     $mysqli->query("TRUNCATE TABLE `{$tablename}`")
         or die("Could not clear Merkle table: " . $mysqli->error);
