@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
 }
 
 // 📄 Fetch all user files
-$query = "SELECT FILE_ID, FILE_NAME, UPLOADTIMESTAMP FROM `$tablename` ORDER BY TREE_INDEX ASC";
+$query = "SELECT FILE_ID, FILE_NAME, UPLOADTIMESTAMP FROM `$tablename` WHERE NODE_TYPE = 'Leaf' ORDER BY TREE_INDEX ASC";
 $result = $mysqli->query($query);
 ?>
 

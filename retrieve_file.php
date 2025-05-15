@@ -21,7 +21,7 @@ if (isset($_POST['search'])) {
     $hash = crc32($searchName) % 1000;
     $bloom = [];
 
-    $res = $mysqli->query("SELECT FILE_NAME FROM `$tablename`");
+    $res = $mysqli->query("SELECT FILE_NAME FROM `$tablename` WHERE NODE_TYPE = 'Leaf'");
     while ($r = $res->fetch_assoc()) {
         $bloom[crc32($r['FILE_NAME']) % 1000] = true;
     }
@@ -29,7 +29,7 @@ if (isset($_POST['search'])) {
     if (!isset($bloom[$hash])) {
         $message = "❌ File name mismatch";
     } else {
-        $stmt = $mysqli->prepare("SELECT FILE_ID, FILE_NAME FROM `$tablename` WHERE FILE_NAME LIKE ?");
+        $stmt = $mysqli->prepare("SELECT FILE_ID, FILE_NAME FROM `$tablename` WHERE FILE_NAME LIKE ? AND NODE_TYPE = 'Leaf'");
         $stmt->bind_param("s", $safeSearch);
         $stmt->execute();
         $results = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);

@@ -56,8 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Upload_Submit'])) {
     $mysqli->query($q1) or die($mysqli->error);
     $Fileid = $mysqli->insert_id;
 
-    $q2 = "INSERT INTO $tablename (FILE_ID, USER_ID, FILE_NAME, MERKLE_HASH, CIPHERTEXT, HMACDIGEST, UPLOADTIMESTAMP)
-           VALUES ('$Fileid', '$id', '$Filename', '$Filehash', '$ciphertext_b64', '$FileHMAChash', '$Filetimestamp')";
+    $q2 = "INSERT INTO $tablename (FILE_ID, USER_ID, FILE_NAME, MERKLE_HASH, CIPHERTEXT, HMACDIGEST, NODE_TYPE, UPLOADTIMESTAMP)
+           VALUES ('$Fileid', '$id', '$Filename', '$Filehash', '$ciphertext_b64', '$FileHMAChash', 'Leaf', '$Filetimestamp')";
     if (!$mysqli->query($q2)) {
         echo "Insert failed: " . $mysqli->error;
     }
