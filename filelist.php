@@ -140,11 +140,13 @@ $result = $mysqli->query($query);
 
   <h2>📁 Your Uploaded Files</h2>
 
-  <!-- 🔘 Integrity + Upload Buttons -->
-  <div class="action-buttons">
+  <!-- 🔘 Integrity + Upload + Retrieve Buttons -->
+<div class="action-buttons">
     <a href="integrity_report.php" class="top-btn">🔍 Integrity Report</a>
     <a href="upload.php" class="top-btn" style="background-color: #28a745;">⬆ Upload New File</a>
-  </div>
+    <a href="retrieve_file.php" class="top-btn" style="background-color: #ffc107; color: black;">📥 Retrieve File</a>
+</div>
+
 
   <table>
     <tr>
