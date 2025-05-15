@@ -30,6 +30,91 @@ if (isset($_POST['Edit_Submit'])) {
 
   $q2 = "UPDATE $tablename SET FILE_NAME = '$editFileName', MERKLE_HASH = '$newFilehash', CIPHERTEXT = '$newciphertext_b64', HMACDIGEST = '$newFileHMAChash', UPLOADTIMESTAMP = '$newFiletimestamp' WHERE FILE_ID = '$editFileID'";
     $mysqli->query($q2) or die($mysqli->error);
+
+  // Step 1: reload *all* leaves (from all_file) in chronological order
+    $leafs = [];
+    $stmtL = $mysqli->prepare("
+        SELECT FILE_ID, FILE_NAME, MERKLE_HASH, CIPHERTEXT, HMACDIGEST, UPLOADTIMESTAMP
+        FROM `{$tablename}`
+        WHERE USER_ID = ? AND NODE_TYPE = 'Leaf'
+        ORDER BY FILE_ID 
+    ");
+    $stmtL->bind_param("i", $editFileID);
+    $stmtL->execute();
+    $resL = $stmtL->get_result();
+    while ($r = $resL->fetch_assoc()) {
+        $leafs[] = $r;
+    }
+    $stmtL->close();
+
+    // Step 1.1: clear out the old Merkle table
+    $mysqli->query("TRUNCATE TABLE `{$tablename}`")
+        or die("Could not clear Merkle table: " . $mysqli->error);
+
+    // Step 2: re-insert leaves into your Merkle table
+    $stmtIns = $mysqli->prepare("
+      INSERT INTO `{$tablename}`
+        (FILE_ID, USER_ID, FILE_NAME, MERKLE_HASH, CIPHERTEXT, HMACDIGEST, NODE_TYPE, LEFTCHILD, UPLOADTIMESTAMP)
+      VALUES (?,?,?,?,?,?,?,?,?)
+    ");
+    foreach ($leafs as $leaf) {
+        $zero      = null;
+        $nodeType = 'Leaf';
+        $stmtIns->bind_param(
+          "iisssssis",
+          $leaf['FILE_ID'],       // FILE_ID
+          $editFileID,            // USER_ID
+          $leaf['FILE_NAME'],     // FILE_NAME
+          $leaf['MERKLE_HASH'],   // MERKLE_HASH
+          $leaf['CIPHERTEXT'],    // CIPHERTEXT
+          $leaf['HMACDIGEST'],    // HMACDIGEST (reuse last HMAC since base_table didn’t store HMAC)
+          $nodeType,               // NODE_TYPE placeholder
+          $zero,                  // LEFTCHILD
+          $leaf['UPLOADTIMESTAMP']// UPLOADTIMESTAMP
+        );
+        $stmtIns->execute() or die("Leaf insert failed: " . $stmtIns->error);
+    }
+    $stmtIns->close();
+
+    // Step 3: load back just the newly inserted leaf ROW IDs in order
+    $leafRows = [];
+    $res2 = $mysqli->query("SELECT TREE_INDEX, MERKLE_HASH 
+                            FROM `{$tablename}` 
+                            WHERE USER_ID = {$editFileID} 
+                              AND NODE_TYPE = 'Leaf'
+                            ORDER BY TREE_INDEX")
+          or die($mysqli->error);
+    while ($r = $res2->fetch_assoc()) {
+        $leafRows[] = $r;
+    }
+
+    // Step 4: build and insert 1‑level parents
+    $stmtPar = $mysqli->prepare("
+      INSERT INTO `{$tablename}`
+        (USER_ID, FILE_NAME, MERKLE_HASH, NODE_TYPE, LEFTCHILD)
+      VALUES (?, ?, ?, 'Parent', ?)
+    ");
+    $count = count($leafRows);
+    for ($i = 0; $i < $count; $i += 2) {
+        $left  = $leafRows[$i];
+        // if odd‑count, duplicate the last
+        $right = ($i + 1 < $count) ? $leafRows[$i+1] : $left;
+
+        // parent hash = H( H_left || H_right )
+        $parentHash = hash('sha256', $left['MERKLE_HASH'] . $right['MERKLE_HASH']);
+
+        $parentName = "parent_{$left['TREE_INDEX']}_{$right['TREE_INDEX']}";
+
+        $stmtPar->bind_param(
+          "issi",
+          $editFileID,
+          $parentName,
+          $parentHash,
+          $left['TREE_INDEX']
+        );
+        $stmtPar->execute() or die("Parent insert failed: " . $stmtPar->error);
+    }
+    $stmtPar->close();
 }
 
 // 🗑 Handle file deletion
@@ -43,6 +128,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     $stmt2 = $mysqli->prepare("DELETE FROM `all_file` WHERE FILE_ID = ?");
     $stmt2->bind_param("i", $fileId);
     $stmt2->execute();
+
+    $q3 = "UPDATE users SET FILE_NUM = FILE_NUM - 1 WHERE USER_ID = '$userid'";
+    $mysqli->query($q3) or die($mysqli->error);
+
+        // Step 1.1: clear out the old Merkle table
+    $mysqli->query("TRUNCATE TABLE `{$tablename}`")
+        or die("Could not clear Merkle table: " . $mysqli->error);
+
+    // Step 2: re-insert leaves into your Merkle table
+    $stmtIns = $mysqli->prepare("
+      INSERT INTO `{$tablename}`
+        (FILE_ID, USER_ID, FILE_NAME, MERKLE_HASH, CIPHERTEXT, HMACDIGEST, NODE_TYPE, LEFTCHILD, UPLOADTIMESTAMP)
+      VALUES (?,?,?,?,?,?,?,?,?)
+    ");
+    foreach ($leafs as $leaf) {
+        $zero      = null;
+        $nodeType = 'Leaf';
+        $stmtIns->bind_param(
+          "iisssssis",
+          $leaf['FILE_ID'],       // FILE_ID
+          $userid,            // USER_ID
+          $leaf['FILE_NAME'],     // FILE_NAME
+          $leaf['MERKLE_HASH'],   // MERKLE_HASH
+          $leaf['CIPHERTEXT'],    // CIPHERTEXT
+          $leaf['HMACDIGEST'],    // HMACDIGEST (reuse last HMAC since base_table didn’t store HMAC)
+          $nodeType,               // NODE_TYPE placeholder
+          $zero,                  // LEFTCHILD
+          $leaf['UPLOADTIMESTAMP']// UPLOADTIMESTAMP
+        );
+        $stmtIns->execute() or die("Leaf insert failed: " . $stmtIns->error);
+    }
+    $stmtIns->close();
+
+    // Step 3: load back just the newly inserted leaf ROW IDs in order
+    $leafRows = [];
+    $res2 = $mysqli->query("SELECT TREE_INDEX, MERKLE_HASH 
+                            FROM `{$tablename}` 
+                            WHERE USER_ID = {$userid} 
+                              AND NODE_TYPE = 'Leaf'
+                            ORDER BY TREE_INDEX")
+          or die($mysqli->error);
+    while ($r = $res2->fetch_assoc()) {
+        $leafRows[] = $r;
+    }
+
+    // Step 4: build and insert 1‑level parents
+    $stmtPar = $mysqli->prepare("
+      INSERT INTO `{$tablename}`
+        (USER_ID, FILE_NAME, MERKLE_HASH, NODE_TYPE, LEFTCHILD)
+      VALUES (?, ?, ?, 'Parent', ?)
+    ");
+    $count = count($leafRows);
+    for ($i = 0; $i < $count; $i += 2) {
+        $left  = $leafRows[$i];
+        // if odd‑count, duplicate the last
+        $right = ($i + 1 < $count) ? $leafRows[$i+1] : $left;
+
+        // parent hash = H( H_left || H_right )
+        $parentHash = hash('sha256', $left['MERKLE_HASH'] . $right['MERKLE_HASH']);
+
+        $parentName = "parent_{$left['TREE_INDEX']}_{$right['TREE_INDEX']}";
+
+        $stmtPar->bind_param(
+          "issi",
+          $userid,
+          $parentName,
+          $parentHash,
+          $left['TREE_INDEX']
+        );
+        $stmtPar->execute() or die("Parent insert failed: " . $stmtPar->error);
+    }
+    $stmtPar->close();
 }
 
 // 📄 Fetch all user files
